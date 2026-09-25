@@ -1,4 +1,5 @@
 import os
+import mimetypes
 import boto3
 from botocore.config import Config
 
@@ -14,7 +15,10 @@ def run():
 
     for root, subdirs, files in os.walk(dist_folder):
         for file in files:
-            s3_client.upload_file(os.path.join(root, file), bucket, file)
+            file_path = os.path.join(root, file)
+            key = os.path.relpath(file_path, dist_folder).replace(os.sep, '/')
+            content_type = mimetypes.guess_type(file)[0] or 'application/octet-stream'
+            s3_client.upload_file(file_path, bucket, key, ExtraArgs={'ContentType': content_type})
 
     website_url = f'http://{bucket}.s3-website-{bucket_region}.amazonaws.com'
     print(f'::set-output name=website-url::{website_url}')
